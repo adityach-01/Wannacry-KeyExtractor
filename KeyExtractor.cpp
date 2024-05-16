@@ -357,7 +357,7 @@ int main(int argc, char *argv[])
     }
 
     // get the working directory and the PID of the wannacry proccess
-    std::string CurWorkingDir = "TestData/";
+    std::string CurWorkingDir = "data/";
 
 
     std::string PubKey, PrivateKey, DumpPath;
@@ -396,6 +396,9 @@ int main(int argc, char *argv[])
     std::cout << "Prime Size is " << prime_size << " bytes" << std::endl;
 
     std::string dumpPath = DumpPath;
+
+    // create the dump file using procdump executable
+    
     auto P = readAndCheckFile(dumpPath.c_str(), prime_size, N);
 
     if (P == 0)
