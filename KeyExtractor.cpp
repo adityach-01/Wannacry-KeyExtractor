@@ -380,6 +380,16 @@ int main(int argc, char *argv[])
     int pid = 0;
 
     // get the current working directory
+    DWORD buffersize = 1000;
+	char buffer[1000 + 1];
+	int res = GetCurrentDirectory(1000, buffer);
+    if(res == 0){
+        std::cout << "Error in getting Current Working Directory" <<std::endl;
+        CurWorkingDir = "";
+    }
+	else CurWorkingDir = buffer;
+
+
     auto ProcessList = getProcessList();
 
     pid = getWannaCryProcessPID(ProcessList);
