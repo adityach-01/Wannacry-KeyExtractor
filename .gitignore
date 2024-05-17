@@ -3,3 +3,8 @@ a.out
 test.cpp
 vips_dmp_1.dmp
 vips_dmp_2.dmp
+*.o
+a.exe
+temp.cpp
+temp2.cpp
+.vscode

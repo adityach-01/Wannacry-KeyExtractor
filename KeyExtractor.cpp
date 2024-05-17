@@ -3,25 +3,30 @@
 #include <cstdint>
 #include <cstdio>
 #include "KeyExtractor.hpp"
+#include "Process.hpp"
+#include "FileUtils.hpp"
+#include "Wcry.hpp"
+#include <windows.h>
+
 
 // #include <boost>
 #define MINIMAL_ENTROPY 0.7
 
-class BLOBHEADER
-{
-public:
-    // uint32_t bType, bVersion, reserved, aiKeyAlg;
-    uint8_t bType;
-    uint8_t bVersion;
-    uint16_t reserved;
-    uint32_t aiKeyAlg;
-};
+// class BLOBHEADER
+// {
+// public:
+//     // uint32_t bType, bVersion, reserved, aiKeyAlg;
+//     uint8_t bType;
+//     uint8_t bVersion;
+//     uint16_t reserved;
+//     uint32_t aiKeyAlg;
+// };
 
-class RSAPUBKEY
-{
-public:
-    uint32_t magic, bitlen, pubexp;
-};
+// class RSAPUBKEY
+// {
+// public:
+//     uint32_t magic, bitlen, pubexp;
+// };
 
 std::vector<uint8_t> init_buffer(FILE *fp, int size)
 {
@@ -45,6 +50,17 @@ void dumpHex(const char *Name, uint8_t const *Data, size_t const Len)
         printf("%02X ", Data[i]);
     }
     printf("\n====\n");
+}
+
+void writeIntegerToFile(FILE *f, BigInt const &N, uint32_t padSize)
+{
+    auto NData = getDataFromInteger(N);
+    // Padding with zeros
+    NData.resize(padSize);
+    if (fwrite(&NData[0], 1, NData.size(), f) != NData.size())
+    {
+        std::cerr << "Error while writing!" << std::endl;
+    }
 }
 
 bool isPrime(BigInt const &n)
@@ -196,32 +212,6 @@ BigInt readAndCheckFile(const char *path, int prime_size, BigInt N)
     return 0;
 }
 
-std::error_code getLastErrno()
-{
-    return std::error_code{errno, std::system_category()};
-}
-
-std::vector<uint8_t> readFile(const char *path, std::error_code &EC)
-{
-    std::vector<uint8_t> Ret;
-    FILE *f = fopen(path, "rb");
-    if (!f)
-    {
-        EC = getLastErrno();
-        return Ret;
-    }
-    fseek(f, 0, SEEK_END);
-    const long Size = ftell(f);
-    fseek(f, 0, SEEK_SET);
-    Ret.resize(Size);
-    if (fread(&Ret[0], 1, Size, f) != Size)
-    {
-        EC = getLastErrno();
-        return Ret;
-    }
-    EC = std::error_code{};
-    return Ret;
-}
 
 std::vector<uint8_t> getDataFromInteger(BigInt const &N, bool MsvFirst /* = false */)
 {
@@ -230,6 +220,7 @@ std::vector<uint8_t> getDataFromInteger(BigInt const &N, bool MsvFirst /* = fals
     return Ret;
 }
 
+// uses Euclidean algorithm for computing the multiplicative inverse
 BigInt mulInv(BigInt a, BigInt b)
 {
     BigInt b0 = b, t, q;
@@ -291,17 +282,6 @@ std::pair<BigInt, int> getModolusfromPublicKey(std::string public_key)
 }
 
 
-void writeIntegerToFile(FILE *f, BigInt const &N, uint32_t padSize)
-{
-    auto NData = getDataFromInteger(N);
-    // Padding with zeros
-    NData.resize(padSize);
-    if (fwrite(&NData[0], 1, NData.size(), f) != NData.size())
-    {
-        std::cerr << "Error while writing!" << std::endl;
-    }
-}
-
 static bool genRSAKey(BigInt const &N, BigInt const &P, uint32_t PrimeSize, const char *OutFile)
 {
     FILE *f = fopen(OutFile, "wb");
@@ -345,61 +325,133 @@ static bool genRSAKey(BigInt const &N, BigInt const &P, uint32_t PrimeSize, cons
     return true;
 }
 
+bool generateDumpFile(std::string dumpPath, int pid, std::string ExecName, std::string WcryPath){
+    // get the executable as a resource, for later
+
+    // form the string needed to spawning the process
+    LPCSTR lpApplicationName = "procdump.exe";
+    std::string ShellArgs = "procdump.exe -ma ";
+
+    if(pid == -1){
+        std::string path = WcryPath + "\\" +  ExecName;
+        ShellArgs = ShellArgs + path;
+        ShellArgs += " ";
+    }else{
+        std::string Spid;
+        Spid = std::to_string(pid);
+
+        ShellArgs = ShellArgs + Spid;
+        ShellArgs += " ";
+    }
+
+    ShellArgs = ShellArgs + dumpPath;
+
+    LPSTR lpShellArgs = const_cast<LPSTR>(ShellArgs.c_str());
+
+    // run a new process with the desired command line arguments
+    PROCESS_INFORMATION pi;
+    STARTUPINFOA si;
+
+    ZeroMemory(&si, sizeof(si));
+    si.cb = sizeof(si);
+
+    if(!CreateProcessA(lpApplicationName, lpShellArgs, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi)){
+        std::cout << "Failed to create Process, Error Code " << GetLastError() << std::endl;
+        return false;
+    }
+
+    WaitForSingleObject(pi.hProcess, INFINITE);
+
+    CloseHandle(pi.hProcess);
+    CloseHandle(pi.hThread);
+
+    std::cout << "Created Dump File........." << std::endl;
+    return true;
+}
+
 int main(int argc, char *argv[])
 {   
     // has a command line argument
-    bool customPath = false;
-    if(argc > 1){
-        char *flag = argv[1];
-        if(!strcmp(flag, "--custom")) customPath = true;
+    // cmd line arguments
+    bool genDump = true;
 
-        
-    }
+    std::string CurWorkingDir, WannaCryPath, ExecName = "";
+    std::string DumpName = "wcrydump.dmp";
+    int pid = 0;
 
-    // get the working directory and the PID of the wannacry proccess
-    std::string CurWorkingDir = "data/";
+    // get the current working directory
+    auto ProcessList = getProcessList();
 
+    pid = getWannaCryProcessPID(ProcessList);
 
     std::string PubKey, PrivateKey, DumpPath;
+    if(argc < 2){
+        // no command line argument
+        // current working directory to be the wannacry executable directory
+        // compute the working directory of the wannacry executable
+        WannaCryPath = getProcessPathFromPID(ProcessList, pid);
 
-    if(customPath){
-        std::cout << "Enter Public Key path : ";
-        std::cin >> PubKey;
+        if(WannaCryPath.length() == 0){
+            std::cerr << "Unable to get the working directory of the Wannacry Process" << std::endl;
+            WannaCryPath = CurWorkingDir;
+        }
+        else CurWorkingDir = WannaCryPath;
 
-        if(PubKey.length() == 0) PubKey = CurWorkingDir + "00000000.pky";
+        PubKey = CurWorkingDir + "\\00000000.pky";
+        PrivateKey = CurWorkingDir + "\\00000000.dky";
+        DumpPath = CurWorkingDir + "\\" + DumpName;
 
-        std::cout << "Enter Private Key path : ";
-        std::cin >> PrivateKey;
-
-        if(PrivateKey.length() == 0) PrivateKey = CurWorkingDir + "00000000.dky";
-
-        std::cout << "Enter Dump file path : ";
-        std::cin >> DumpPath;
-
-        if(DumpPath.length() == 0) DumpPath = CurWorkingDir + "ProcessDump.dmp";
     }else{
-        PubKey = CurWorkingDir + "00000000.pky";
-        PrivateKey = CurWorkingDir + "00000000.dky";
-        // DumpPath = CurWorkingDir + "ProcessDump.dmp";
-        std::cout << "Enter Dump File path : " << std::endl;
-        std::cin >> DumpPath;
+        char *flag = argv[1];
+        if(strcmp(flag, "-nodump")){
+            // current working directory as the path of public key
+            genDump = false;
+            std::cout << "Enter Absolute Dump File Path : ";
+            std::cin >> DumpPath;
+
+            std::cout << "Enter Absolute Public Key Path : ";
+            std::cin >> PubKey;
+
+            if(PubKey.length() == 0){
+                PubKey = CurWorkingDir + "\\00000000.pky";
+                PrivateKey = CurWorkingDir + "\\00000000.dky";
+            }
+        }
+        else if(strcmp(flag, "-custom")){
+            // current working directory is the path of the wannacry executable entered by the user
+            std::cout << "Enter Wannacry Executable Name : " << std::endl;
+            std::cin >> ExecName;
+            std::cout << "Enter Wannacry Executable Folder : " << std::endl;
+            std::cin >> WannaCryPath;
+
+            if(WannaCryPath.length() > 0) CurWorkingDir = WannaCryPath;
+            else WannaCryPath = CurWorkingDir;
+
+            PubKey = CurWorkingDir + "\\00000000.pky";
+            PrivateKey = CurWorkingDir + "\\00000000.dky";
+            DumpPath = CurWorkingDir + "\\" + DumpName;
+        }
     }
 
 
     std::string pubPath = PubKey;
+    // getting the modolus and public exponent from the public key
     auto data = getModolusfromPublicKey(pubPath);
 
     int prime_size = data.second;
     auto N = data.first;
-
-
     std::cout << "Prime Size is " << prime_size << " bytes" << std::endl;
 
-    std::string dumpPath = DumpPath;
+
+    std::string dumpFilePath = DumpPath;
 
     // create the dump file using procdump executable
+    if(genDump && !generateDumpFile(dumpFilePath, pid, ExecName, WannaCryPath)){
+        std::cout << "Error in generating Dump file" << std::endl;
+        return 0;
+    }
     
-    auto P = readAndCheckFile(dumpPath.c_str(), prime_size, N);
+    auto P = readAndCheckFile(dumpFilePath.c_str(), prime_size, N);
 
     if (P == 0)
     {
