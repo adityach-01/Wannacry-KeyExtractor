@@ -1,9 +1,12 @@
 OBJECTS = Process.o Wcry.o FileUtils.o KeyExtractor.o
 CC = g++
 BOOST_LIB_PATH = C:\boost\include\boost-1_85
+FLAGS = -static -static-libgcc -static-libstdc++
+
+# can try only -static-libgcc or plain -static
 
 KeyExtractor.exe: $(OBJECTS)
-	$(CC) $(OBJECTS) -o KeyExtractor.exe -lpsapi 
+	$(CC) $(OBJECTS) -o KeyExtractor.exe -lpsapi $(FLAGS)
 
 Process.o: Process.hpp Process.cpp
 	$(CC) -c Process.cpp
