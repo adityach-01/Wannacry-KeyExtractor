@@ -28,6 +28,7 @@ Compile from source
 ===================
 
 You can make changes to the source code and compile from the source as well. Install the ``boost`` library on the system and specify its path in the makefile by changing ``BOOST_LIB_PATH`` inside makefile. 
+
 After this is done, go inside the keyExtractor/ folder and run ``make``. After this, the executable named ``KeyExtractor.exe`` will be created and can be used.
 
 
