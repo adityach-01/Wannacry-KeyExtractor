@@ -21,6 +21,8 @@ Usage
 You can use the binary ``KeyExtractor.exe`` in the bin/ folder. It will locate the encryption PID by itself. If it can't, you might need to run the executable by using ``-custom`` flag, which would then ask you to specify the executable name and parent directory to the software. 
 If you already have the dump file and the public key file and want to extract the private key, invoke the executable using ``-nodump`` flag, and then specify the absolute path of the dump file and the pubic key. Otherwise, run the executable with no flags.
 
+It should be noted that the software uses ``procdump.exe`` for creating the full dump of the encryption process, hence before invoking ``KeyExtractor.exe``, ``procdump.exe`` should be kept in the same working directory as the main executable. The ``procdump.exe`` executable can be found inside the keyExtractor/ folder.
+
 If the key had been succeesfully generated, you will just need to use the "Decrypt" button of the malware to decrypt your files!. Make sure that the private key resides in the same directory in which Wanacry executable is started. Sample public key and corresponding dump file has been placed in data/ folder, you can use those to generate a sample private key.
 
 
