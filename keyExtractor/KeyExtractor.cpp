@@ -369,6 +369,16 @@ bool generateDumpFile(std::string dumpPath, int pid, std::string ExecName, std::
     return true;
 }
 
+std::string getPrivateKeyPath(std::string pubKey){
+    int len = pubKey.length();
+
+    std::string path = pubKey;
+    int index = len - 3;
+    path[index] = 'd';
+
+    return path;
+}
+
 int main(int argc, char *argv[])
 {   
     // has a command line argument
@@ -415,7 +425,6 @@ int main(int argc, char *argv[])
         else CurWorkingDir = WannaCryPath;
 
         PubKey = CurWorkingDir + "\\00000000.pky";
-        PrivateKey = CurWorkingDir + "\\00000000.dky";
         DumpPath = CurWorkingDir + "\\" + DumpName;
 
     }else{
@@ -432,7 +441,6 @@ int main(int argc, char *argv[])
 
             if(PubKey.length() == 0){
                 PubKey = CurWorkingDir + "\\00000000.pky";
-                PrivateKey = CurWorkingDir + "\\00000000.dky";
             }
         }
         else if(strcmp(flag, "-custom") == 0){
@@ -446,17 +454,11 @@ int main(int argc, char *argv[])
             else WannaCryPath = CurWorkingDir;
 
             PubKey = CurWorkingDir + "\\00000000.pky";
-            PrivateKey = CurWorkingDir + "\\00000000.dky";
             DumpPath = CurWorkingDir + "\\" + DumpName;
         }
     }
 
-
-    std::cout << "Paths got : " << std::endl;
-    std::cout << PubKey << std::endl;
-    std::cout << DumpPath << std::endl;
-    std::cout << PrivateKey << std::endl;
-
+    PrivateKey = getPrivateKeyPath(PubKey);
 
     std::string pubPath = PubKey;
     // getting the modolus and public exponent from the public key
@@ -475,6 +477,7 @@ int main(int argc, char *argv[])
         return 0;
     }
     
+    std::cout << "Checking Dump file for primes, please wait.............." << std::endl;
     auto P = readAndCheckFile(dumpFilePath.c_str(), prime_size, N);
 
     if (P == 0)
@@ -498,7 +501,7 @@ int main(int argc, char *argv[])
 
         std::cout << "Generating Private Key file.........." << std::endl;
         genRSAKey(N, P, prime_size, PrivateKey.c_str());
-        std::cout << "Private Key file in " << CurWorkingDir << "/" << PrivateKey << std::endl;
+        std::cout << "Private Key file in " << PrivateKey << std::endl;
     }
 
     return 0;
