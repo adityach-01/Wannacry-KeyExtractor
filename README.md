@@ -18,7 +18,8 @@ From what I have observed, creating a dump during the encryption process increas
 Usage
 =====
 
-You can use the binary ``KeyExtractor.exe`` in the bin/ folder. It will locate the encryption PID by itself. If it can't, you might need to run the executable by using ``-custom`` flag, which would then ask you to specify the executable name and parent directory to the software. If you have the dump file and the public key file and want to extract the key, invoke the executable using ``-nodump`` flag, and then specify the absolute path of the dump file and the pubic key. Otherwise, run the executable with no flags.
+You can use the binary ``KeyExtractor.exe`` in the bin/ folder. It will locate the encryption PID by itself. If it can't, you might need to run the executable by using ``-custom`` flag, which would then ask you to specify the executable name and parent directory to the software. 
+If you already have the dump file and the public key file and want to extract the private key, invoke the executable using ``-nodump`` flag, and then specify the absolute path of the dump file and the pubic key. Otherwise, run the executable with no flags.
 
 If the key had been succeesfully generated, you will just need to use the "Decrypt" button of the malware to decrypt your files!. Make sure that the private key resides in the same directory in which Wanacry executable is started. Sample public key and corresponding dump file has been placed in data/ folder, you can use those to generate a sample private key.
 
@@ -26,6 +27,7 @@ If the key had been succeesfully generated, you will just need to use the "Decry
 Compile from source
 ===================
 
-You can make changes to the source code and compile from the source as well. Install the ``boost`` library on the system and specify its path in the makefile. After this is done, go inside the keyExtractor/ folder and run ``make``. After this, the executable named ``KeyExtractor.exe`` will be created and can be used.
+You can make changes to the source code and compile from the source as well. Install the ``boost`` library on the system and specify its path in the makefile by changing ``BOOST_LIB_PATH`` inside makefile. 
+After this is done, go inside the keyExtractor/ folder and run ``make``. After this, the executable named ``KeyExtractor.exe`` will be created and can be used.
 
 
