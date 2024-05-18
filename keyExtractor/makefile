@@ -20,5 +20,8 @@ FileUtils.o: FileUtils.hpp FileUtils.cpp
 KeyExtractor.o: KeyExtractor.hpp KeyExtractor.cpp
 	$(CC) -c KeyExtractor.cpp -I $(BOOST_LIB_PATH)
 
+run: KeyExtractor.exe
+	.\KeyExtractor.exe
+
 clean:
 	rm -rf *.o KeyExtractor.exe

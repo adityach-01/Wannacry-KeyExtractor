@@ -412,7 +412,7 @@ int main(int argc, char *argv[])
     std::cout << "-----------------------------------------------------------" << std::endl;
 
     std::string PubKey, PrivateKey, DumpPath;
-    pid = 16520;
+
     if(argc < 2){
         // no command line argument
         // current working directory to be the wannacry executable directory
@@ -447,6 +447,7 @@ int main(int argc, char *argv[])
 
         PubKey = CurWorkingDir + "\\00000000.pky";
         DumpPath = CurWorkingDir + "\\" + DumpName;
+        // DumpPath += "\\" + DumpName;
 
     }else{
         char *flag = argv[1];
@@ -481,6 +482,7 @@ int main(int argc, char *argv[])
 
 
     PrivateKey = getPrivateKeyPath(PubKey);
+    
     std::cout << PubKey << std::endl;
     std::cout << DumpPath << std::endl;
     std::cout << PrivateKey << std::endl;
@@ -488,12 +490,13 @@ int main(int argc, char *argv[])
 
     std::string pubPath = PubKey;
     // getting the modolus and public exponent from the public key
-    auto data = getModolusfromPublicKey(pubPath);
+    // auto data = getModolusfromPublicKey(pubPath);
 
-    int prime_size = data.second;
-    auto N = data.first;
-    std::cout << "Prime Size is " << prime_size << " bytes" << std::endl;
-
+    // int prime_size = data.second;
+    // auto N = data.first;
+    // std::cout << "Prime Size is " << prime_size << " bytes" << std::endl;
+    auto N = 10;
+    int prime_size = 128;
 
     std::string dumpFilePath = DumpPath;
 
