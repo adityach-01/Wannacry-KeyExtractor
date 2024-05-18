@@ -274,8 +274,8 @@ std::pair<BigInt, int> getModolusfromPublicKey(std::string public_key)
     // considering little endian notation
     const auto N = getInteger(&keyData[idx], keyLen);
 
-    std::vector<uint8_t> Nval = getDataFromInteger(N);
-    dumpHex("N that matters", &Nval[0], keyLen);
+    // std::vector<uint8_t> Nval = getDataFromInteger(N);
+    // dumpHex("N that matters", &Nval[0], keyLen);
 
     // return the modolus
     return {N, subkeyLen};
@@ -412,6 +412,7 @@ int main(int argc, char *argv[])
     std::cout << "-----------------------------------------------------------" << std::endl;
 
     std::string PubKey, PrivateKey, DumpPath;
+    pid = 16520;
     if(argc < 2){
         // no command line argument
         // current working directory to be the wannacry executable directory
@@ -422,7 +423,27 @@ int main(int argc, char *argv[])
             std::cerr << "Unable to get the working directory of the Wannacry Process" << std::endl;
             WannaCryPath = CurWorkingDir;
         }
-        else CurWorkingDir = WannaCryPath;
+        else{
+            // split the name and path from the path
+            std::string temp = "";
+            bool hasocc = false;
+            for(int i = WannaCryPath.length() - 1; i >= 0; i--){
+                if(WannaCryPath[i] == '\\' && !hasocc){
+                    hasocc = true;
+                    continue;
+                }
+
+                if(!hasocc){
+                    ExecName += WannaCryPath[i];
+                }
+                else temp += WannaCryPath[i];
+            }
+            std::reverse(ExecName.begin(), ExecName.end());
+            std::reverse(temp.begin(), temp.end());
+
+            WannaCryPath = temp;
+            CurWorkingDir = WannaCryPath;
+        }
 
         PubKey = CurWorkingDir + "\\00000000.pky";
         DumpPath = CurWorkingDir + "\\" + DumpName;
@@ -458,7 +479,12 @@ int main(int argc, char *argv[])
         }
     }
 
+
     PrivateKey = getPrivateKeyPath(PubKey);
+    std::cout << PubKey << std::endl;
+    std::cout << DumpPath << std::endl;
+    std::cout << PrivateKey << std::endl;
+    std::cout << ExecName << std::endl;
 
     std::string pubPath = PubKey;
     // getting the modolus and public exponent from the public key
