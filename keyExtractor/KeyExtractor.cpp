@@ -392,7 +392,14 @@ int main(int argc, char *argv[])
 
     auto ProcessList = getProcessList();
 
+
+    std::cout << "Getting the PID of the WannaCry Process" << std::endl;
     pid = getWannaCryProcessPID(ProcessList);
+
+
+    std::cout << "-----------------------------------------------------------" << std::endl;
+    std::cout << "PID of WannaCry Process : " << pid << std::endl;
+    std::cout << "-----------------------------------------------------------" << std::endl;
 
     std::string PubKey, PrivateKey, DumpPath;
     if(argc < 2){
@@ -413,9 +420,10 @@ int main(int argc, char *argv[])
 
     }else{
         char *flag = argv[1];
-        if(strcmp(flag, "-nodump")){
+        if(strcmp(flag, "-nodump") == 0){
             // current working directory as the path of public key
             genDump = false;
+
             std::cout << "Enter Absolute Dump File Path : ";
             std::cin >> DumpPath;
 
@@ -427,7 +435,7 @@ int main(int argc, char *argv[])
                 PrivateKey = CurWorkingDir + "\\00000000.dky";
             }
         }
-        else if(strcmp(flag, "-custom")){
+        else if(strcmp(flag, "-custom") == 0){
             // current working directory is the path of the wannacry executable entered by the user
             std::cout << "Enter Wannacry Executable Name : " << std::endl;
             std::cin >> ExecName;
@@ -442,6 +450,12 @@ int main(int argc, char *argv[])
             DumpPath = CurWorkingDir + "\\" + DumpName;
         }
     }
+
+
+    std::cout << "Paths got : " << std::endl;
+    std::cout << PubKey << std::endl;
+    std::cout << DumpPath << std::endl;
+    std::cout << PrivateKey << std::endl;
 
 
     std::string pubPath = PubKey;
