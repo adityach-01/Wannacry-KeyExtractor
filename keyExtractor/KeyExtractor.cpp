@@ -332,11 +332,23 @@ bool generateDumpFile(std::string dumpPath, int pid, std::string ExecName, std::
     LPCSTR lpApplicationName = "procdump.exe";
     std::string ShellArgs = "procdump.exe -ma ";
 
-    if(pid == -1){
-        std::string path = WcryPath + "\\" +  ExecName;
-        ShellArgs = ShellArgs + path;
+    // add .exe in exec name if not present
+    bool usePID = false;
+    if(ExecName == "") usePID = true;
+    else{
+        std::string extension = ".exe";
+        if(ExecName.substr(ExecName.length()-4,4) != extension){
+            ExecName += extension;
+        }
+    }
+
+    std::cout << ExecName << std::endl;
+
+    if(!usePID){
+        ShellArgs = ShellArgs + ExecName;
         ShellArgs += " ";
     }else{
+        // if path is not known, then use PID
         std::string Spid;
         Spid = std::to_string(pid);
 
@@ -488,15 +500,14 @@ int main(int argc, char *argv[])
     std::cout << PrivateKey << std::endl;
     std::cout << ExecName << std::endl;
 
+
     std::string pubPath = PubKey;
     // getting the modolus and public exponent from the public key
-    // auto data = getModolusfromPublicKey(pubPath);
+    auto data = getModolusfromPublicKey(pubPath);
 
-    // int prime_size = data.second;
-    // auto N = data.first;
-    // std::cout << "Prime Size is " << prime_size << " bytes" << std::endl;
-    auto N = 10;
-    int prime_size = 128;
+    int prime_size = data.second;
+    auto N = data.first;
+    std::cout << "Prime Size is " << prime_size << " bytes" << std::endl;
 
     std::string dumpFilePath = DumpPath;
 
